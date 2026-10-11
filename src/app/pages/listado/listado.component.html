@@ -1,0 +1,36 @@
+<section class="screen active">
+  <app-header></app-header>
+
+  <div class="page-wrap">
+    <h1 class="page-title">Explorar noticias</h1>
+    <p class="page-sub">
+      {{ lista().length }} historia{{
+        lista().length === 1 ? "" : "s"
+      }}
+      encontrada{{ lista().length === 1 ? "" : "s" }}
+    </p>
+
+    <div class="filters">
+      <span
+        *ngFor="let cat of categorias"
+        class="filter-chip"
+        [class.active]="filtroActivo() === cat.valor"
+        (click)="seleccionarFiltro(cat.valor)"
+        >{{ cat.etiqueta }}</span
+      >
+    </div>
+
+    <div class="listado-grid" *ngIf="lista().length; else vacio">
+      <app-news-card
+        *ngFor="let n of lista()"
+        [news]="n"
+        [listStyle]="true"
+        [favorita]="esFavorita(n.id)"
+        (favoritoClick)="alternarFavorito($event)"
+      ></app-news-card>
+    </div>
+    <ng-template #vacio>
+      <p class="empty-state">No hay noticias en esta categoría por ahora.</p>
+    </ng-template>
+  </div>
+</section>

@@ -1,0 +1,29 @@
+<section class="screen active">
+  <app-header></app-header>
+
+  <div class="page-wrap">
+    <h1 class="page-title">Tus favoritos</h1>
+    <p class="page-sub">
+      {{ lista().length }} historia{{
+        lista().length === 1 ? "" : "s"
+      }}
+      guardada{{ lista().length === 1 ? "" : "s" }}
+    </p>
+
+    <div class="listado-grid" *ngIf="lista().length; else vacio">
+      <app-news-card
+        *ngFor="let n of lista()"
+        [news]="n"
+        [listStyle]="true"
+        [favorita]="true"
+        (favoritoClick)="alternarFavorito($event)"
+      ></app-news-card>
+    </div>
+    <ng-template #vacio>
+      <p class="empty-state">
+        Aún no has marcado noticias como favoritas. Haz clic en la estrella de
+        una tarjeta para guardarla aquí.
+      </p>
+    </ng-template>
+  </div>
+</section>

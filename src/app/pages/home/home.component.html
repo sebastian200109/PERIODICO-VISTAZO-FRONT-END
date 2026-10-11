@@ -1,0 +1,47 @@
+<section class="screen active">
+  <app-header></app-header>
+
+  <div class="hero">
+    <div>
+      <h1>Noticias y experiencias que vale la pena mirar de cerca.</h1>
+      <p>
+        Explora historias de educación, tecnología, turismo y comercio contadas
+        por quienes las viven — guarda las que te interesan y vuelve a ellas
+        cuando quieras.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" routerLink="/explorar">Explorar noticias</a>
+        <a class="btn btn-ghost" routerLink="/contacto">Contactar</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <span class="tag">Destacado · Tecnología</span>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h2>Destacadas de la semana</h2>
+    <a routerLink="/explorar">Ver todas →</a>
+  </div>
+
+  <div class="cards-grid">
+    <app-news-card
+      *ngFor="let n of destacadas()"
+      [news]="n"
+      [favorita]="esFavorita(n.id)"
+      (favoritoClick)="alternarFavorito($event)"
+    ></app-news-card>
+  </div>
+
+  <div class="cta-band">
+    <div class="cta-inner">
+      <div>
+        <h2>¿Tienes una historia que contar?</h2>
+        <p>Cuéntanos tu experiencia y ayúdanos a construir esta edición.</p>
+      </div>
+      <a class="btn btn-on-dark" routerLink="/contacto">Escríbenos</a>
+    </div>
+  </div>
+
+  <app-footer></app-footer>
+</section>

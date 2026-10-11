@@ -1,0 +1,71 @@
+<section class="screen active">
+  <app-header></app-header>
+
+  <div class="page-wrap">
+    <div class="detalle-grid" *ngIf="noticia() as n; else noEncontrada">
+      <div>
+        <div class="breadcrumb">
+          <a routerLink="/explorar">Explorar</a> / {{ n.catLabel }} / Detalle
+        </div>
+        <div
+          class="detalle-img"
+          [style.background-image]="'url(' + n.imagen + ')'"
+        >
+          <span class="cat-pill" [class]="claseCategoria(n)">{{
+            n.catLabel
+          }}</span>
+          <span
+            class="fav-star"
+            [class.active]="esFavorita(n.id)"
+            (click)="alternarFavorito(n.id)"
+            title="Agregar a favoritos"
+            >★</span
+          >
+        </div>
+        <h1>{{ n.titulo }}</h1>
+        <div class="meta-row">
+          <span>📍 {{ n.ubicacion }}</span
+          ><span>·</span><span>{{ n.fecha }}</span>
+        </div>
+        <div class="detalle-body">
+          <p *ngFor="let parrafo of n.contenido">{{ parrafo }}</p>
+        </div>
+        <div class="detalle-actions">
+          <span class="btn btn-primary" (click)="alternarFavorito(n.id)">
+            {{ esFavorita(n.id) ? "★ En favoritos" : "☆ Agregar a favoritos" }}
+          </span>
+          <a class="btn btn-ghost" routerLink="/contacto"
+            >Contactar organizadores</a
+          >
+        </div>
+      </div>
+
+      <div>
+        <div class="side-box">
+          <h4>Sobre esta experiencia</h4>
+          <p>
+            Categoría: {{ n.catLabel }}<br />Modalidad: {{ n.modalidad
+            }}<br />Costo: {{ n.costo }}<br />Cupos: {{ n.cupos }}
+          </p>
+        </div>
+        <div class="side-box">
+          <h4>Relacionadas</h4>
+          <p *ngIf="relacionadas().length; else sinRelacionadas">
+            <ng-container *ngFor="let r of relacionadas(); let last = last">
+              <a class="related-item" [routerLink]="['/detalle', r.id]">{{
+                r.titulo
+              }}</a>
+              <br *ngIf="!last" /><br *ngIf="!last" />
+            </ng-container>
+          </p>
+          <ng-template #sinRelacionadas
+            ><p>No hay noticias relacionadas.</p></ng-template
+          >
+        </div>
+      </div>
+    </div>
+    <ng-template #noEncontrada>
+      <p class="empty-state">Noticia no encontrada.</p>
+    </ng-template>
+  </div>
+</section>

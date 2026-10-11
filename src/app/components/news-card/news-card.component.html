@@ -1,0 +1,19 @@
+<div [class]="listStyle ? 'list-card' : 'card ' + claseTamano">
+  <div class="card-img" [style.background-image]="'url(' + news.imagen + ')'">
+    <span class="cat-pill" [class]="claseCategoria">{{ news.catLabel }}</span>
+    <span
+      class="fav-star"
+      [class.active]="favorita"
+      (click)="onFavorito($event)"
+      title="Agregar a favoritos"
+      >★</span
+    >
+  </div>
+  <div class="card-body">
+    <h3>{{ news.titulo }}</h3>
+    <p>{{ news.resumen }}</p>
+    <div class="card-foot">
+      <a class="link-more" [routerLink]="['/detalle', news.id]">Ver más →</a>
+    </div>
+  </div>
+</div>

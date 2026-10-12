@@ -1,169 +1,237 @@
-// ============================================================
-// VISTAZO — Renderizado dinámico de noticias desde JSON
-// ============================================================
+/* ===== Estado ===== */
+const CLAVE_FAV = 'vistazo_favoritos';
+let noticias = [];
+let categoriaActual = 'todas';
+let idDetalle = null;
 
-let noticias = [];       // se llena al cargar data/news.json
-let filtroActivo = "todas";
-
-const CAT_CLASS = {
-  educacion: "cat-edu",
-  tecnologia: "cat-tech",
-  turismo: "cat-tur",
-  comercio: "cat-com"
+const CATEGORIAS = {
+  educacion:  { clase: 'cat-edu',  nombre: 'Educación' },
+  tecnologia: { clase: 'cat-tech', nombre: 'Tecnología' },
+  turismo:    { clase: 'cat-tur',  nombre: 'Turismo' },
+  comercio:   { clase: 'cat-com',  nombre: 'Comercio' }
 };
 
-// ---------- Carga de datos ----------
-async function cargarNoticias() {
-  try {
-    const res = await fetch("data/news.json");
-    if (!res.ok) throw new Error("No se pudo cargar el JSON de noticias");
-    noticias = await res.json();
-  } catch (err) {
-    console.error(err);
-    noticias = [];
-  }
-  renderHome();
-  renderListado();
+/* ===== Favoritos (localStorage) ===== */
+function leerFavoritos() {
+  try { return JSON.parse(localStorage.getItem(CLAVE_FAV)) || []; }
+  catch { return []; }
+}
+function esFavorito(id) { return leerFavoritos().includes(String(id)); }
+function alternarFavorito(id) {
+  const favs = leerFavoritos();
+  const i = favs.indexOf(String(id));
+  if (i >= 0) favs.splice(i, 1); else favs.push(String(id));
+  localStorage.setItem(CLAVE_FAV, JSON.stringify(favs));
 }
 
-function buscarNoticiaPorId(id) {
-  return noticias.find(n => n.id === Number(id));
+/* ===== Navegación entre pantallas ===== */
+function irA(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  window.scrollTo(0, 0);
 }
 
-// ---------- HOME: destacadas dinámicas ----------
+/* ===== Render de tarjetas ===== */
+function tarjeta(n, claseExtra = '', claseContenedor = 'card') {
+  const cat = CATEGORIAS[n.categoria] || { clase: 'cat-tech', nombre: n.categoria };
+  const fav = esFavorito(n.id);
+  return `
+    <article class="${claseContenedor} ${claseExtra}">
+      <div class="card-img" style="background-image:url('${n.imagen || ''}')">
+        <span class="cat-pill ${cat.clase}">${cat.nombre}</span>
+      </div>
+      <div class="card-body">
+        <h3>${n.titulo}</h3>
+        <p>${n.descripcion}</p>
+        <div class="card-foot">
+          <span class="link-more" data-ver="${n.id}">Ver más →</span>
+          <span class="fav-icon ${fav ? 'active' : ''}" data-fav="${n.id}" title="Favorito">${fav ? '♥' : '♡'}</span>
+        </div>
+      </div>
+    </article>`;
+}
+
 function renderHome() {
-  const contenedor = document.getElementById("home-cards-grid");
-  const destacadas = noticias.filter(n => n.destacadaHome);
-  contenedor.innerHTML = destacadas.map(n => tarjetaHome(n)).join("");
+  const destacadas = noticias.slice(0, 5);
+  document.getElementById('home-cards-grid').innerHTML = destacadas
+    .map((n, i) => tarjeta(n, i === 0 ? 'card-feature' : ''))
+    .join('');
 }
 
-function tarjetaHome(n) {
-  const claseTamano = n.tamHome === "feature" ? "card-feature"
-                     : n.tamHome === "normal-wide" ? "card-normal-wide"
-                     : "";
-  return `
-    <div class="card ${claseTamano}">
-      <div class="card-img" style="background-image:url('${n.imagen}')"><span class="cat-pill ${CAT_CLASS[n.categoria]}">${n.catLabel}</span></div>
-      <div class="card-body">
-        <h3>${n.titulo}</h3>
-        <p>${n.resumen}</p>
-        <div class="card-foot">
-          <a class="link-more" data-detalle="${n.id}">Ver más →</a>
-          <span class="fav-icon">♡</span>
-        </div>
-      </div>
-    </div>`;
-}
-
-// ---------- LISTADO: cards dinámicas + filtro por categoría ----------
 function renderListado() {
-  const contenedor = document.getElementById("listado-grid");
-  const contador = document.getElementById("listado-contador");
-
-  const lista = filtroActivo === "todas"
+  const lista = categoriaActual === 'todas'
     ? noticias
-    : noticias.filter(n => n.categoria === filtroActivo);
+    : noticias.filter(n => n.categoria === categoriaActual);
 
-  contador.textContent = `${lista.length} historia${lista.length === 1 ? "" : "s"} encontrada${lista.length === 1 ? "" : "s"}`;
+  document.getElementById('listado-contador').textContent =
+    `${lista.length} ${lista.length === 1 ? 'noticia' : 'noticias'}`;
 
-  contenedor.innerHTML = lista.length
-    ? lista.map(n => tarjetaListado(n)).join("")
-    : `<p class="empty-state">No hay noticias en esta categoría por ahora.</p>`;
+  document.getElementById('listado-grid').innerHTML = lista.length
+    ? lista.map(n => tarjeta(n, '', 'list-card')).join('')
+    : '<p class="empty-state">No hay noticias en esta categoría.</p>';
 }
 
-function tarjetaListado(n) {
-  return `
-    <div class="list-card">
-      <div class="card-img" style="background-image:url('${n.imagen}')"><span class="cat-pill ${CAT_CLASS[n.categoria]}">${n.catLabel}</span></div>
-      <div class="card-body">
-        <h3>${n.titulo}</h3>
-        <p>${n.resumen}</p>
-        <div class="card-foot">
-          <a class="link-more" data-detalle="${n.id}">Ver más →</a>
-          <span class="fav-icon">♡</span>
-        </div>
-      </div>
-    </div>`;
-}
+function mostrarDetalle(id) {
+  const n = noticias.find(x => String(x.id) === String(id));
+  if (!n) return;
+  idDetalle = n.id;
 
-function inicializarFiltros() {
-  document.querySelectorAll("#listado-filtros .filter-chip").forEach(chip => {
-    chip.addEventListener("click", () => {
-      filtroActivo = chip.dataset.cat;
-      document.querySelectorAll("#listado-filtros .filter-chip")
-        .forEach(c => c.classList.toggle("active", c === chip));
-      renderListado();
-    });
-  });
-}
+  const cat = CATEGORIAS[n.categoria] || { clase: 'cat-tech', nombre: n.categoria };
+  const fav = esFavorito(n.id);
+  const relacionadas = noticias
+    .filter(x => x.categoria === n.categoria && x.id !== n.id)
+    .slice(0, 3);
 
-// ---------- DETALLE: contenido dinámico según la noticia elegida ----------
-function renderDetalle(id) {
-  const n = buscarNoticiaPorId(id);
-  const contenedor = document.getElementById("detalle-contenido");
-  if (!n) {
-    contenedor.innerHTML = `<p class="empty-state">Noticia no encontrada.</p>`;
-    return;
-  }
-
-  const relacionadas = (n.relacionadas || [])
-    .map(rid => buscarNoticiaPorId(rid))
-    .filter(Boolean);
-
-  contenedor.innerHTML = `
+  document.getElementById('detalle-contenido').innerHTML = `
     <div>
-      <div class="breadcrumb"><a data-goto="listado">Explorar</a> / ${n.catLabel} / Detalle</div>
-      <div class="detalle-img" style="background-image:url('${n.imagen}')"><span class="cat-pill ${CAT_CLASS[n.categoria]}">${n.catLabel}</span></div>
-      <h1>${n.titulo}</h1>
-      <div class="meta-row"><span>📍 ${n.ubicacion}</span><span>·</span><span>${n.fecha}</span></div>
-      <div class="detalle-body">
-        ${n.contenido.map(p => `<p>${p}</p>`).join("")}
+      <div class="breadcrumb">
+        <a data-goto="home">Inicio</a> / <a data-goto="listado">Explorar</a> / ${cat.nombre}
       </div>
+      <div class="detalle-img" style="background-image:url('${n.imagen || ''}')">
+        <span class="cat-pill ${cat.clase}">${cat.nombre}</span>
+      </div>
+      <h1>${n.titulo}</h1>
+      <div class="meta-row">
+        ${n.autor ? `<span>Por ${n.autor}</span>` : ''}
+        ${n.fecha ? `<span>${n.fecha}</span>` : ''}
+      </div>
+      <div class="detalle-body"><p>${n.contenido || n.descripcion}</p></div>
       <div class="detalle-actions">
-        <span class="btn btn-primary">♡ Agregar a favoritos</span>
-        <span class="btn btn-ghost" data-goto="contacto">Contactar organizadores</span>
+        <button type="button" class="btn btn-primary" data-fav="${n.id}">
+          ${fav ? '♥ Quitar de favoritos' : '♡ Guardar en favoritos'}
+        </button>
+        <button type="button" class="btn btn-ghost" data-goto="contacto">Contactar</button>
       </div>
     </div>
-
-    <div>
+    <aside>
       <div class="side-box">
-        <h4>Sobre esta experiencia</h4>
-        <p>Categoría: ${n.catLabel}<br>Modalidad: ${n.modalidad}<br>Costo: ${n.costo}<br>Cupos: ${n.cupos}</p>
+        <h4>¿Tienes una historia similar?</h4>
+        <p>Compártela con nosotros desde la página de contacto.</p>
       </div>
       <div class="side-box">
-        <h4>Relacionadas</h4>
-        <p>${relacionadas.map(r => `<span class="related-item" data-detalle="${r.id}">${r.titulo}</span>`).join("<br><br>") || "No hay noticias relacionadas."}</p>
+        <h4>Noticias relacionadas</h4>
+        ${relacionadas.length
+          ? relacionadas.map(r => `<p class="related-item" data-ver="${r.id}">${r.titulo}</p>`).join('')
+          : '<p>No hay noticias relacionadas.</p>'}
       </div>
-    </div>`;
+    </aside>`;
+
+  irA('detalle');
 }
 
-// ---------- Navegación entre pantallas ----------
-function goTo(nombrePantalla) {
-  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === nombrePantalla));
-  window.scrollTo({ top: 0, behavior: "instant" });
+function renderTodo() {
+  renderHome();
+  renderListado();
+  if (idDetalle !== null && document.getElementById('detalle').classList.contains('active')) {
+    mostrarDetalle(idDetalle);
+  }
 }
 
-function goToDetalle(id) {
-  renderDetalle(id);
-  goTo("detalle");
-}
+/* ===== Clics (un solo listener para toda la página) ===== */
+document.addEventListener('click', e => {
+  const goto = e.target.closest('[data-goto]');
+  if (goto) { irA(goto.dataset.goto); return; }
 
-// Delegación de eventos: clicks en data-goto y data-detalle en cualquier parte del documento,
-// incluido el contenido que se genera dinámicamente.
-document.addEventListener("click", (e) => {
-  const irA = e.target.closest("[data-goto]");
-  if (irA) {
-    goTo(irA.dataset.goto);
+  const ver = e.target.closest('[data-ver]');
+  if (ver) { mostrarDetalle(ver.dataset.ver); return; }
+
+  const fav = e.target.closest('[data-fav]');
+  if (fav) {
+    alternarFavorito(fav.dataset.fav);
+    renderTodo();
     return;
   }
-  const verDetalle = e.target.closest("[data-detalle]");
-  if (verDetalle) {
-    goToDetalle(verDetalle.dataset.detalle);
+
+  const chip = e.target.closest('.filter-chip');
+  if (chip) {
+    categoriaActual = chip.dataset.cat;
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c === chip));
+    renderListado();
   }
 });
 
-// ---------- Inicio ----------
-document.addEventListener("DOMContentLoaded", () => {
-  inicializarFiltros();
-  cargarNoticias();
+/* ===== Carga de noticias ===== */
+fetch('data/news.json')
+  .then(r => r.json())
+  .then(datos => {
+    noticias = datos;
+    renderHome();
+    renderListado();
+  })
+  .catch(() => {
+    document.getElementById('listado-contador').textContent =
+      'No se pudieron cargar las noticias.';
+  });
+
+/* ===== Formulario de contacto + toast ===== */
+/* ===== Formulario de contacto + toast ===== */
+const btnEnviar = document.getElementById('btn-enviar');
+let toastTimer;
+
+const campos = {
+  nombre: document.getElementById('nombre'),
+  correo: document.getElementById('correo'),
+  asunto: document.getElementById('asunto'),
+  mensaje: document.getElementById('mensaje')
+};
+
+function marcarError(input, hayError) {
+  input.closest('.field').classList.toggle('error', hayError);
+}
+
+function formularioValido() {
+  const nombreOk = campos.nombre.value.trim() !== '';
+  const correoOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(campos.correo.value.trim());
+  const mensajeOk = campos.mensaje.value.trim() !== '';
+
+  marcarError(campos.nombre, !nombreOk);
+  marcarError(campos.correo, !correoOk);
+  marcarError(campos.mensaje, !mensajeOk);
+
+  return nombreOk && correoOk && mensajeOk;
+}
+
+function mostrarToast(texto) {
+  let t = document.getElementById('toast-exito');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast-exito';
+    document.body.appendChild(t);
+  }
+
+  t.hidden = false;
+  t.textContent = '✓ ' + texto;
+  Object.assign(t.style, {
+    position: 'fixed',
+    top: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: '#1F6F6B',
+    color: '#fff',
+    padding: '14px 22px',
+    borderRadius: '8px',
+    fontFamily: 'Inter, sans-serif',
+    fontSize: '14px',
+    fontWeight: '600',
+    boxShadow: '0 6px 24px rgba(0,0,0,.25)',
+    zIndex: '9999',
+    transition: 'opacity .3s ease',
+    opacity: '1',
+    display: 'block'
+  });
+
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    t.style.opacity = '0';
+    setTimeout(() => { t.style.display = 'none'; }, 300);
+  }, 3500);
+}
+
+btnEnviar.addEventListener('click', () => {
+  if (!formularioValido()) return;
+  mostrarToast('Tu mensaje fue enviado correctamente.');
+  Object.values(campos).forEach(c => (c.value = ''));
+});
+
+['nombre', 'correo', 'mensaje'].forEach(k => {
+  campos[k].addEventListener('input', () => marcarError(campos[k], false));
 });

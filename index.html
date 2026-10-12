@@ -166,33 +166,37 @@
       </div>
 
       <div class="form-box">
-        <div class="confirm-box">
-          ✓ <span>Así se ve el mensaje de confirmación después de enviar el formulario correctamente.</span>
-        </div>
-
         <div class="field">
-          <label>Nombre completo *</label>
-          <input type="text" placeholder="Escribe tu nombre">
+          <label for="nombre">Nombre completo *</label>
+          <input type="text" id="nombre" placeholder="Escribe tu nombre">
+          <div class="error-msg">Ingresa tu nombre.</div>
         </div>
-        <div class="field error">
-          <label>Correo electrónico *</label>
-          <input type="text" value="correo-no-valido">
+        <div class="field">
+          <label for="correo">Correo electrónico *</label>
+          <input type="text" id="correo" placeholder="tucorreo@ejemplo.com">
           <div class="error-msg">Ingresa un correo electrónico válido.</div>
         </div>
         <div class="field">
-          <label>Asunto</label>
-          <input type="text" placeholder="¿De qué quieres hablarnos?">
+          <label for="asunto">Asunto</label>
+          <input type="text" id="asunto" placeholder="¿De qué quieres hablarnos?">
         </div>
         <div class="field">
-          <label>Mensaje *</label>
-          <textarea rows="4" placeholder="Escribe tu mensaje aquí..."></textarea>
+          <label for="mensaje">Mensaje *</label>
+          <textarea id="mensaje" rows="4" placeholder="Escribe tu mensaje aquí..."></textarea>
+          <div class="error-msg">Escribe tu mensaje.</div>
           <div class="field-hint">Campos marcados con * son obligatorios.</div>
         </div>
-        <span class="btn btn-primary" style="width:100%;text-align:center;">Enviar mensaje</span>
+        <button type="button" id="btn-enviar" class="btn btn-primary" style="width:100%;">Enviar mensaje</button>
       </div>
     </div>
   </div>
 </section>
+
+<!-- Aviso de envío exitoso -->
+<div class="toast" id="toast-exito" role="status" aria-live="polite" hidden>
+  <span class="toast-icon">✓</span>
+  <span>Tu mensaje fue enviado correctamente.</span>
+</div>
 
 <script src="script.js"></script>
 </body>
